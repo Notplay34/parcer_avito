@@ -1,0 +1,40 @@
+services:
+  app:
+    build: .
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql://avito:avito@db:5432/avito_monitor
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  api:
+    build: .
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql://avito:avito@db:5432/avito_monitor
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8001:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: avito
+      POSTGRES_PASSWORD: avito
+      POSTGRES_DB: avito_monitor
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U avito -d avito_monitor"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
