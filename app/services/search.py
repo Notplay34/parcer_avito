@@ -135,6 +135,34 @@ def get_active_searches(limit: int = 20) -> list[dict]:
         ]
 
 
+def list_user_searches(telegram_id: int) -> list[dict]:
+    """Список поисков пользователя: [{"id": 1, "name": "...", "url": "..."}, ...]."""
+    with get_db() as db:
+        user = db.query(User).filter(User.telegram_id == telegram_id).first()
+        if not user:
+            return []
+        rows = db.query(Search.id, Search.name, Search.search_url).filter(
+            Search.user_id == user.id
+        ).order_by(Search.id).all()
+        return [
+            {"id": r.id, "name": r.name, "url": (r.search_url[:60] + "…") if len(r.search_url) > 60 else r.search_url}
+            for r in rows
+        ]
+
+
+def delete_search(telegram_id: int, search_id: int) -> tuple[bool, str]:
+    """Удалить поиск. Возвращает (успех, сообщение). Удалять можно только свой поиск."""
+    with get_db() as db:
+        user = db.query(User).filter(User.telegram_id == telegram_id).first()
+        if not user:
+            return False, "Пользователь не найден."
+        search = db.query(Search).filter(Search.id == search_id, Search.user_id == user.id).first()
+        if not search:
+            return False, "Поиск не найден или это не ваш поиск."
+        db.delete(search)
+    return True, "Поиск удалён. Можете добавить другую ссылку через /add_search"
+
+
 def get_seen_ad_ids(search_id: int) -> set[str]:
     with get_db() as db:
         rows = db.query(SeenAd.avito_ad_id).filter(SeenAd.search_id == search_id).all()
