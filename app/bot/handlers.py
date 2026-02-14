@@ -1,4 +1,5 @@
 """Telegram bot command handlers."""
+import html
 import logging
 from aiogram import Router, F
 from aiogram.types import Message
@@ -19,7 +20,7 @@ async def cmd_start(message: Message) -> None:
         "Привет! Я бот мониторинга объявлений Avito.\n\n"
         "Добавить поиск: /add_search\n"
         "Мои поиски: /my_searches\n"
-        "Удалить поиск: /delete_search <номер>\n\n"
+        "Удалить поиск: /delete_search номер\n\n"
         "Скопируйте ссылку с Avito: откройте Avito в браузере (телефон или компьютер), "
         "настройте фильтры и скопируйте ссылку из адресной строки.\n\n"
         "‼️ Обязательно укажите максимальную цену в фильтрах Avito. "
@@ -61,10 +62,10 @@ async def cmd_my_searches(message: Message) -> None:
         return
     lines = []
     for i, s in enumerate(searches, 1):
-        lines.append(f"{i}. {s['name']}\n   {s['url']}")
+        lines.append(f"{i}. {html.escape(s['name'])}\n   {html.escape(s['url'])}")
     await message.answer(
         "Ваши поиски:\n\n" + "\n\n".join(lines) + "\n\n"
-        "Удалить: /delete_search <номер> (например /delete_search 1)"
+        "Удалить: /delete_search номер (например /delete_search 1)"
     )
 
 
